@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    container_name: ping-exporter
+    image: hellowoodes/ping-exporter
+    ports:
+      - "9001:9001"
+    volumes:
+      - "./config.yaml:/app/config.yaml:ro"
+    environment:
+      - TZ=Asia/Shanghai
+      - CONFIG_FILE=/app/config.yaml
