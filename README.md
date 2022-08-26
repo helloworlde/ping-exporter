@@ -1,6 +1,8 @@
 # Ping Exporter
 
-> 用于监控特定网站响应时间，将结果以 Prometheus 格式输出
+> 简易的用于监控特定网站响应时间，将结果以 Prometheus 格式输出的工具
+
+![Grafana](img/grafana.png)
 
 ## 快速使用
 
