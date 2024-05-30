@@ -1,5 +1,9 @@
 targets:
   - homelab.hellowood.dev
   - baidu.com
+  - cloudflare.com
   - google.com
   - github.com
+  - 127.0.0.1
+#  - region1.v2.argotunnel.com
+#  - region2.v2.argotunnel.com
