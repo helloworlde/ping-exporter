@@ -1,9 +1,17 @@
 targets:
-  - homelab.hellowood.dev
-  - baidu.com
-  - cloudflare.com
-  - google.com
-  - github.com
-  - 127.0.0.1
-#  - region1.v2.argotunnel.com
-#  - region2.v2.argotunnel.com
+  dns:
+    - 2400:3200:baba::1
+    - 8.8.8.8
+    - 1.1.1.1
+    - 223.5.5.5
+  china:
+    - baidu.com
+    - zhihu.com
+  local:
+    - 192.168.2.1
+  world:
+    - cloudflare.com
+    - google.com
+    - github.com
+    - youtube.com
+    - region1.v2.argotunnel.com

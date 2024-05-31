@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	Targets []string `yaml:"targets"`
+	Targets map[string][]string `yaml:"targets"`
 }
 
 var (
@@ -23,7 +23,7 @@ var (
 			Help:    "Ping latency in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"address", "ip"},
+		[]string{"group", "address", "ip"},
 	)
 
 	pingPackageSent = prometheus.NewGaugeVec(
@@ -31,7 +31,7 @@ var (
 			Name: "ping_packets_sent",
 			Help: "Packets sent in ping",
 		},
-		[]string{"address", "ip"},
+		[]string{"group", "address", "ip"},
 	)
 
 	pingPackageLost = prometheus.NewGaugeVec(
@@ -39,15 +39,7 @@ var (
 			Name: "ping_packets_lost",
 			Help: "Packets lost in ping",
 		},
-		[]string{"address", "ip", "error"},
-	)
-
-	pingError = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "ping_packets_error",
-			Help: "Packets error in ping",
-		},
-		[]string{"address", "ip", "error"},
+		[]string{"group", "address", "ip"},
 	)
 )
 
@@ -55,7 +47,6 @@ func init() {
 	prometheus.MustRegister(pingLatency)
 	prometheus.MustRegister(pingPackageLost)
 	prometheus.MustRegister(pingPackageSent)
-	prometheus.MustRegister(pingError)
 }
 
 func loadConfig(path string) (*Config, error) {
@@ -71,7 +62,7 @@ func loadConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
-func pingTarget(address string) {
+func pingTarget(group, address string) {
 	pinger, err := ping.NewPinger(address)
 	if err != nil {
 		log.Printf("Failed to create pinger for %s: %v", address, err)
@@ -90,12 +81,9 @@ func pingTarget(address string) {
 
 		statistics := pinger.Statistics()
 
-		if statistics.PacketLoss > 0 {
-			pingPackageLost.WithLabelValues(address, statistics.Addr, "").Set(statistics.PacketLoss)
-		}
-
-		pingPackageSent.WithLabelValues(address, statistics.Addr).Add(float64(statistics.PacketsSent))
-		pingLatency.WithLabelValues(address, statistics.IPAddr.String()).Observe(float64(statistics.AvgRtt.Microseconds()))
+		pingPackageLost.WithLabelValues(group, address, statistics.Addr).Set(statistics.PacketLoss)
+		pingPackageSent.WithLabelValues(group, address, statistics.Addr).Add(float64(statistics.PacketsSent))
+		pingLatency.WithLabelValues(group, address, statistics.IPAddr.String()).Observe(float64(statistics.AvgRtt.Microseconds()))
 
 		log.Printf("Ping to %s: %v", address, statistics.AvgRtt.String())
 		time.Sleep(time.Second)
@@ -103,13 +91,19 @@ func pingTarget(address string) {
 }
 
 func main() {
+	configFile := os.Getenv("CONFIG_FILE")
+	if configFile == "" {
+		configFile = "config.yaml"
+	}
 	config, err := loadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	for _, target := range config.Targets {
-		go pingTarget(target)
+	for group, targets := range config.Targets {
+		for _, address := range targets {
+			go pingTarget(group, address)
+		}
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
