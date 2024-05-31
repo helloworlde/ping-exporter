@@ -19,9 +19,9 @@ type Config struct {
 var (
 	pingLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "ping_latency_seconds",
-			Help:    "Ping latency in seconds",
-			Buckets: prometheus.DefBuckets,
+			Name:    "ping_latency",
+			Help:    "Ping latency in millisecond",
+			Buckets: []float64{1, 2, 5, 10, 20, 30, 40, 50, 100, 150, 200, 500, 1000, 2000, 5000},
 		},
 		[]string{"group", "address", "ip"},
 	)
@@ -83,7 +83,7 @@ func pingTarget(group, address string) {
 
 		pingPackageLost.WithLabelValues(group, address, statistics.Addr).Set(statistics.PacketLoss)
 		pingPackageSent.WithLabelValues(group, address, statistics.Addr).Add(float64(statistics.PacketsSent))
-		pingLatency.WithLabelValues(group, address, statistics.IPAddr.String()).Observe(float64(statistics.AvgRtt.Microseconds()))
+		pingLatency.WithLabelValues(group, address, statistics.IPAddr.String()).Observe(float64(statistics.AvgRtt.Milliseconds()))
 
 		log.Printf("Ping to %s: %v", address, statistics.AvgRtt.String())
 		time.Sleep(time.Second)
