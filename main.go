@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	ping "github.com/prometheus-community/pro-bing"
+	"github.com/prometheus-community/pro-bing"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gopkg.in/yaml.v2"
@@ -62,15 +62,15 @@ func loadConfig(path string) (*Config, error) {
 }
 
 func pingTarget(group, address string) {
-	pinger, err := ping.NewPinger(address)
-	if err != nil {
-		log.Printf("Failed to create pinger for %s: %v", address, err)
-		return
-	}
-	pinger.Count = 1
-	pinger.Timeout = time.Second
-
 	for {
+		pinger, err := probing.NewPinger(address)
+		if err != nil {
+			log.Printf("Failed to create pinger for %s: %v", address, err)
+			return
+		}
+		pinger.Count = 1
+		pinger.Timeout = time.Second
+
 		err = pinger.Run()
 		if err != nil {
 			log.Printf("Run Ping to %s failed: %v", address, err)
@@ -80,11 +80,12 @@ func pingTarget(group, address string) {
 
 		statistics := pinger.Statistics()
 
-		pingPackageLost.WithLabelValues(group, address, statistics.Addr).Set(statistics.PacketLoss)
-		pingPackageSent.WithLabelValues(group, address, statistics.Addr).Add(float64(statistics.PacketsSent))
+		pingPackageLost.WithLabelValues(group, address, statistics.IPAddr.String()).Set(statistics.PacketLoss)
+		pingPackageSent.WithLabelValues(group, address, statistics.IPAddr.String()).Add(float64(statistics.PacketsSent))
 		pingLatency.WithLabelValues(group, address, statistics.IPAddr.String()).Observe(float64(statistics.AvgRtt.Milliseconds()))
 
-		log.Printf("Ping to %s: %v", address, statistics.AvgRtt.String())
+		log.Printf("Ping to %s(%s) cost: %v", address, statistics.IPAddr.String(), statistics.AvgRtt.String())
+		pinger.Stop()
 		time.Sleep(time.Second)
 	}
 }
