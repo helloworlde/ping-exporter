@@ -17,11 +17,10 @@ type Config struct {
 }
 
 var (
-	pingLatency = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "ping_latency",
-			Help:    "Ping latency in millisecond",
-			Buckets: []float64{1, 2, 5, 10, 20, 30, 40, 50, 100, 150, 200, 500, 1000, 2000, 5000},
+	pingLatency = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "ping_latency",
+			Help: "Ping latency in millisecond",
 		},
 		[]string{"group", "address", "ip"},
 	)
